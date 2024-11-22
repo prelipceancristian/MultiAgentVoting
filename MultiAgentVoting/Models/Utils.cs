@@ -2,7 +2,9 @@
 {
     internal static class Utils
     {
-        public static Random Rng = new(Seed: 1);
+        public const string ModeratorName = "Moderator";
+        
+        public static readonly Random Rng = new();
 
         public static T PickRandom<T>(List<T> list)
         {

@@ -2,6 +2,9 @@
 {
     internal enum MessageAction
     {
-        Vote
+        Register,
+        Vote,
+        VoteResponse,
+        Winner
     }
 }

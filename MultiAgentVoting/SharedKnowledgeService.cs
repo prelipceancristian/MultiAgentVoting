@@ -1,5 +1,6 @@
 ﻿using MultiAgentVoting.Agents;
 using MultiAgentVoting.Models;
+using MultiAgentVoting.VotingProtocols;
 
 namespace MultiAgentVoting
 {
@@ -7,7 +8,7 @@ namespace MultiAgentVoting
     {
         public static List<CandidateAgent> Registrations { get; set; } = [];
 
-        public static VotingProtocol VotingProtocol { get; set; }
+        public static IVotingProtocol VotingProtocol { get; set; } = new PluralityVotingProtocol();
 
         public static void RegisterCandidate(CandidateAgent candidate)
         {

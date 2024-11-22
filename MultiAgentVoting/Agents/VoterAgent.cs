@@ -5,11 +5,11 @@ namespace MultiAgentVoting.Agents
 {
     internal class VoterAgent : Agent
     {
-        public Policy Policy { get; set; }
-        public List<Rating> CandidatesRatings { get; set; } = [];
+        private Policy Policy { get; }
+        private List<Rating> CandidatesRatings { get; set; } = [];
 
         public VoterAgent(string name, Policy policy)
-        { 
+        {
             Name = name;
             Policy = policy;
         }
@@ -17,47 +17,33 @@ namespace MultiAgentVoting.Agents
         public override void Act(Message message)
         {
             var messageContent = (MessageContent)message.ContentObj;
-            if (messageContent is null)
-            {
-                throw new Exception("Could not parse message content");
-            }
 
-            switch(messageContent.Action)
+            switch (messageContent.Action)
             {
                 case MessageAction.Vote:
-                    HandleVote(messageContent); 
+                    HandleVote();
                     break;
+                case MessageAction.Winner:
+                    Stop();
+                    break;
+                case MessageAction.Register:
+                case MessageAction.VoteResponse:
                 default:
                     throw new Exception("Could not parse message action");
             }
         }
 
-        public void HandleVote(MessageContent messageContent)
+        private void HandleVote()
         {
             CandidatesRatings = RateVoters();
             var votingProtocol = SharedKnowledgeService.VotingProtocol;
-            if (votingProtocol == VotingProtocol.Plurality)
-            {
-                var vote = GetPluralityVote();
-                Send("Monitor", vote);
-            }
-            else if (votingProtocol == VotingProtocol.Approval)
-            {
-                var vote = GetApprovalVote();
-                Send("Monitor", vote);
-            }
-            else if (votingProtocol == VotingProtocol.SingleTransferable)
-            {
-                var vote = GetPluralityVote();
-                Send("Monitor", vote);
-            }
-            else 
-            {
-                throw new Exception("Invalid voting protocol");
-            }
+            var vote = votingProtocol.Vote(this, CandidatesRatings);
+
+            var responseMessageContent = new MessageContent(MessageAction.VoteResponse, vote);
+            Send(Utils.ModeratorName, responseMessageContent);
         }
 
-        public List<Rating> RateVoters()
+        private List<Rating> RateVoters()
         {
             var candidates = SharedKnowledgeService.Registrations;
             var candidatesRatings = candidates
@@ -68,50 +54,33 @@ namespace MultiAgentVoting.Agents
             return candidatesRatings;
         }
 
-        public SingularVote GetPluralityVote()
-        {
-            return GetSingularVote();
-        }
+        // public MultipleVote GetApprovalVote()
+        // {
+        //     const double minimalApprovalRating = 0.5;
+        //     var validCandidates = CandidatesRatings
+        //         .Where(rating => rating.Value >= minimalApprovalRating)
+        //         .Select(rating => rating.Candidate)
+        //         .ToList();
+        //     var vote = new MultipleVote(this, validCandidates);
+        //     return vote;
+        // }
 
-        public SingularVote GetSingleTransferableVote()
-        {
-            return GetSingularVote();
-        }
-
-        private SingularVote GetSingularVote()
-        {
-            var candidate = CandidatesRatings.First().Candidate;
-            var vote = new SingularVote(this, candidate);
-            return vote;
-        }
-
-        public MultipleVote GetApprovalVote()
-        {
-            const double minimalApprovalRating = 0.5;
-            var validCandidates = CandidatesRatings
-                .Where(rating => rating.Value >= minimalApprovalRating)
-                .Select(rating => rating.Candidate)
-                .ToList();
-            var vote = new MultipleVote(this, validCandidates);
-            return vote;
-        }
-
-        public Rating RateCandidate(CandidateAgent candidate)
+        private Rating RateCandidate(CandidateAgent candidate)
         {
             var candidatePolicy = candidate.Policy;
             if (candidatePolicy.CriteriaEvaluations.Count != Policy.CriteriaEvaluations.Count)
             {
-                throw new Exception("Somehow the candidate and the voter do not have the same number of criterias");
+                throw new Exception("Somehow the candidate and the voter do not have the same number of criteria");
             }
 
             var sum = 0.0;
-            foreach (var kvp in Policy.CriteriaEvaluations)
+            foreach (var (criteriaId, voterEvaluation) in Policy.CriteriaEvaluations)
             {
-                var candidateCriteriaEvaluation = candidatePolicy.CriteriaEvaluations[kvp.Key];
-                var voterCriteriaEvaluation = kvp.Value;
-                sum += 1 / (Math.Abs(candidateCriteriaEvaluation - voterCriteriaEvaluation) + 1);
+                var candidateEvaluation = candidatePolicy.CriteriaEvaluations[criteriaId];
+                sum += 1 / (Math.Abs(candidateEvaluation - voterEvaluation) + 1);
             }
-            var ratingValue = sum / CandidatesRatings.Count;
+
+            var ratingValue = sum / Policy.CriteriaEvaluations.Count;
 
             var voterRating = new Rating(candidate, ratingValue);
             return voterRating;

@@ -1,14 +1,15 @@
 ﻿using ActressMas;
-using MultiAgentVoting;
 using MultiAgentVoting.Agents;
 using MultiAgentVoting.Models;
 
-internal class Program
+namespace MultiAgentVoting;
+
+internal static class Program
 {
-    public static List<CandidateAgent> GenerateCandidates(int candidateCount)
+    private static List<CandidateAgent> GenerateCandidates(int candidateCount)
     {
         var candidates = new List<CandidateAgent>();
-        for (int i = 0; i < candidateCount; i++)
+        for (var i = 0; i < candidateCount; i++)
         {
             var candidatePolicy = Policy.GeneratePolicy();
             var candidateName = $"Candidate_{i}";
@@ -19,10 +20,10 @@ internal class Program
         return candidates;
     }
 
-    public static List<VoterAgent> GenerateVoters(int voterCount)
+    private static List<VoterAgent> GenerateVoters(int voterCount)
     {
         var candidates = new List<VoterAgent>();
-        for (int i = 0; i < voterCount; i++)
+        for (var i = 0; i < voterCount; i++)
         {
             var voterPolicy = Policy.GeneratePolicy();
             var voterName = $"Voter_{i}";
@@ -40,13 +41,12 @@ internal class Program
 
         var environment = new EnvironmentMas();
         var candidateAgents = GenerateCandidates(candidateCount);
-        var voterAgents = GenerateCandidates(voterCount);
-        var moderatorAgent = new ModeratorAgent();
+        var voterAgents = GenerateVoters(voterCount);
+        var moderatorAgent = new ModeratorAgent(Utils.ModeratorName);
 
         foreach (var agent in candidateAgents)
         {
             environment.Add(agent);
-            SharedKnowledgeService.RegisterCandidate(agent);
         }
 
         foreach (var agent in voterAgents)
@@ -55,5 +55,6 @@ internal class Program
         }
 
         environment.Add(moderatorAgent);
+        environment.Start();
     }
 }

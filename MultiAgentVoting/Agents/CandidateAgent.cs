@@ -5,22 +5,39 @@ namespace MultiAgentVoting.Agents
 {
     internal class CandidateAgent : Agent
     {
-        public Policy Policy;
+        public Policy Policy { get; }
 
         public CandidateAgent(string name, Policy policy)
         {
             Name = name;
             Policy = policy;
         }
+        
+        public override void Act(Message message)
+        {
+            var messageContent = (MessageContent)message.ContentObj;
+            switch (messageContent.Action)
+            {
+                case MessageAction.Register:
+                    Register();
+                    break;
+                case MessageAction.Winner:
+                    var winner = (CandidateAgent)messageContent.Payload;
+                    HandleResults(winner);
+                    break;
+                default:
+                    throw new Exception("Unknown action");
+            }
+        }
 
-        public void PublishPolicy()
+        private void Register()
         {
             SharedKnowledgeService.RegisterCandidate(this);
         }
 
-        public void HandleResults(string winnerName)
+        private void HandleResults(CandidateAgent winner)
         {
-            if (Name == winnerName)
+            if (Name == winner.Name)
             {
                 Console.WriteLine($"[Candidate {Name}] I won!");
             }
@@ -36,6 +53,7 @@ namespace MultiAgentVoting.Agents
                     Console.WriteLine($"[Candidate {Name}] I lost, congrats.");
                 }
             }
+            Stop();
         }
     }
 }
