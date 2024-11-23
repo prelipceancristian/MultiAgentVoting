@@ -6,9 +6,9 @@ namespace MultiAgentVoting
 {
     internal static class SharedKnowledgeService
     {
-        public static List<CandidateAgent> Registrations { get; set; } = [];
+        public static List<CandidateAgent> Registrations { get; } = [];
 
-        public static IVotingProtocol VotingProtocol { get; set; } = new PluralityVotingProtocol();
+        public static IVotingProtocol VotingProtocol { get; } = new ApprovalVotingProtocol();
 
         public static void RegisterCandidate(CandidateAgent candidate)
         {
