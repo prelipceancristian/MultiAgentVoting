@@ -2,161 +2,113 @@
 using MultiAgentVoting.Models;
 using MultiAgentVoting.VotingProtocols;
 
-namespace MultiAgentVoting.Agents
+namespace MultiAgentVoting.Agents;
+
+internal class ModeratorAgent : Agent
 {
-    internal class ModeratorAgent : Agent
+    private Dictionary<CandidateAgent, List<VoterAgent>> _votes = new();
+    private Dictionary<VoterAgent, bool> _votersStatus = [];
+
+    public ModeratorAgent(string name)
     {
-        private Dictionary<CandidateAgent, List<VoterAgent>> _votes = new();
+        Name = name;
+    }
 
-        public ModeratorAgent(string name)
-        {
-            Name = name;
-        }
+    public override void Setup()
+    {
+        var messageContent = new MessageContent(MessageAction.Start, null!);
+        Send(Name, messageContent);
+    }
 
-        // This method is defined as async void to obtain the "fire and forget" behavior
-        public override async void Setup()
-        {
-            SendRegisterToCandidates();
-            Console.WriteLine("[Moderator agent] Waiting for candidates to register...");
-            await Task.Delay(2000);
+    public override void Act(Message message)
+    {
+        var messageContent = (MessageContent)message.ContentObj;
             
-            var registeredCandidates = SharedKnowledgeService.Registrations;
-            _votes = registeredCandidates.ToDictionary(candidate => candidate, _ => new List<VoterAgent>());
-            
-            SendVoteToVoters();
-            Console.WriteLine("[Moderator agent] Waiting for votes...");
-            await Task.Delay(2000);
-
-            EstablishAndSendWinner();
-        }
-        
-        public override void Act(Message message)
+        switch (messageContent.Action)
         {
-            var messageContent = (MessageContent)message.ContentObj;
-            
-            switch (messageContent.Action)
-            {
-                case MessageAction.VoteResponse:
-                    HandleVoteResponse(messageContent);
-                    break;
-                case MessageAction.Winner:
-                    Stop();
-                    break;
-                default:
-                    throw new Exception("Could not parse message content");
-            }
+            case MessageAction.Start:
+                HandleStart();
+                break;
+            case MessageAction.VoteResponse:
+                HandleVoteResponse(messageContent);
+                break;
+            case MessageAction.Winner:
+                Stop();
+                break;
+            case MessageAction.Vote:
+            default:
+                throw new Exception("Could not parse message content");
         }
+    }
 
-        private void SendRegisterToCandidates()
+    private void HandleStart()
+    {
+        _votes = SharedKnowledgeService.Registrations.ToDictionary(kvp => kvp.Key, _ => new List<VoterAgent>());
+        _votersStatus = SharedKnowledgeService.Voters.ToDictionary(kvp => kvp.Key, _ => false);
+        var voterNames = _votersStatus.Select(kvp => kvp.Key.Name).ToList();
+        SendVoteToVoters(voterNames);
+    }
+    
+    private void HandleVoteResponse(MessageContent messageContent)
+    {
+        var vote = (Vote)messageContent.Payload!;
+        var votingProtocol = SharedKnowledgeService.VotingProtocol;
+        votingProtocol.UpdateVotes(_votes, vote);
+        _votersStatus[vote.VoterAgent] = true;
+        if (_votersStatus.All(v => v.Value))
         {
-            var candidateAgents = Environment.FilteredAgents("Candidate");
-            var registerMessageContent = new MessageContent(MessageAction.Register, null!);
-            SendToMany(candidateAgents, registerMessageContent);
+            AnalyzeElectionResults();
         }
+    }
 
-        private void SendVoteToVoters()
+    private void SendVoteToVoters(List<string> voterNames)
+    {
+        var messageContent = new MessageContent(MessageAction.Vote, null);
+        SendToMany(voterNames, messageContent);
+    }
+
+    private void AnalyzeElectionResults()
+    {
+        DisplayElectionResults();
+        var electionResult = SharedKnowledgeService.VotingProtocol.EstablishWinner(_votes);
+        switch (electionResult)
         {
-            var voterAgentNames = Environment.FilteredAgents("Voter");
-            var messageContent = new MessageContent(MessageAction.Vote, null!);
-            SendToMany(voterAgentNames, messageContent);
+            case SuccessfulElectionResult successfulElectionResult:
+                SendWinnerToAll(successfulElectionResult.Winner);
+                break;
+            case FailedElectionResult failedElectionResult:
+                RestartElectionProcess(failedElectionResult);
+                break;
+            default:
+                throw new Exception("Unsupported election result");
         }
+    }
 
-        private void EstablishAndSendWinner()
+    private void DisplayElectionResults()
+    {
+        Console.WriteLine("Results:");
+        foreach (var kvp in _votes)
         {
-            Console.WriteLine("Results:");
-            foreach (var kvp in _votes)
-            {
-                Console.WriteLine($"{kvp.Key.Name}: {kvp.Value.Count}");
-            }
-
-            var electionResult = SharedKnowledgeService.VotingProtocol.EstablishWinner(_votes);
-            switch (electionResult)
-            {
-                case SuccessfulElectionResult successfulElectionResult:
-                    SendWinnerToAll(successfulElectionResult.Winner);
-                    break;
-                default:
-                    throw new Exception("Unsupported election result");
-            }
+            Console.WriteLine($"{kvp.Key.Name}: {kvp.Value.Count}");
         }
+    }
 
-        private void SendWinnerToAll(CandidateAgent winner)
-        {
-            var messageContent = new MessageContent(MessageAction.Winner, winner);
-            Console.WriteLine($"[Moderator agent] And the winner is {winner.Name}!");
-            Broadcast(messageContent, includeSender: true);
-        }
+    private void RestartElectionProcess(FailedElectionResult failedElectionResult)
+    {
+        Console.WriteLine($"No candidate reached 50% of the votes. " +
+                          $"Removing candidate {failedElectionResult.RemovedCandidate.Name} and trying again.");
+        SharedKnowledgeService.RemoveCandidate(failedElectionResult.RemovedCandidate);
+        var votersToRetry = _votes[failedElectionResult.RemovedCandidate];
+        _votersStatus = votersToRetry.ToDictionary(voter => voter, _ => false);
+        _votes.Remove(failedElectionResult.RemovedCandidate);
+        var voterNames = votersToRetry.Select(x => x.Name).ToList();
+        SendVoteToVoters(voterNames);
+    }
 
-        private void HandleVoteResponse(MessageContent messageContent)
-        {
-            var vote = (Vote)messageContent.Payload;
-            var votingProtocol = SharedKnowledgeService.VotingProtocol;
-            votingProtocol.UpdateVotes(_votes, vote);
-        }
-
-        // private (CandidateAgent Winner, int VoteCount) EstablishPluralityVotingWinner()
-        // {
-        //     return GetCandidateWithMostVotes();
-        // }
-        
-        // public (CandidateAgent Winner, int VoteCount) EstablishApprovalVoteWinner()
-        // {
-        //     return GetCandidateWithMostVotes();
-        // }
-
-        // public (CandidateAgent Winner, int VoteCount)? EstablishSingleTransferableVote()
-        // {
-        //     var (winner, voteCount) = GetCandidateWithMostVotes();
-        //     var totalVoteCount = _votes.SelectMany(kvp => kvp.Value).Count();
-        //     if (voteCount > (totalVoteCount / 2.0))
-        //     {
-        //         return (winner, voteCount);
-        //     }
-        //
-        //     // no winner was established. The moderator must start proceedings for another vote session
-        //     Console.WriteLine("A majority voter could not be established");
-        //     return null;
-        // }
-
-        // private (CandidateAgent Winner, int VoteCount) GetCandidateWithMostVotes()
-        // {
-        //     var mostNumberOfVotes = _votes.Select(kvp => kvp.Value.Count).Max();
-        //     var candidatesWithMostVotes = _votes
-        //         .Where(kvp => kvp.Value.Count == mostNumberOfVotes)
-        //         .Select(kvp => kvp.Key)
-        //         .ToList();
-        //     var winner = Utils.PickRandom(candidatesWithMostVotes);
-        //     return (winner, mostNumberOfVotes);
-        // }
-
-        // public void AcceptPluralityVote(SingularVote vote)
-        // {
-        //     // assume Votes already contains all available candidates
-        //     if (!Votes.TryGetValue(vote.CandidateAgent, out var candidateVoters))
-        //     {
-        //         throw new Exception($"[Moderator agent] Voter {vote.VoterAgent.Name} failed to vote for {vote.CandidateAgent.Name}. The candidate is not registered");
-        //     }
-        //     if (candidateVoters.Contains(vote.VoterAgent))
-        //     {
-        //         throw new Exception($"[Moderator agent] Voter {vote.VoterAgent.Name} already voted for {vote.CandidateAgent.Name}");
-        //     }
-        //     candidateVoters.Add(vote.VoterAgent);
-        // }
-
-        // public void AcceptSingleTransferableVote(MultipleVote vote)
-        // {
-        //     foreach (var candidate in vote.ViableCandidates)
-        //     {
-        //         if (!Votes.TryGetValue(candidate, out var candidateVoters))
-        //         {
-        //             throw new Exception($"[Moderator agent] Voter {vote.VoterAgent.Name} failed to vote for {candidate.Name}. The candidate is not registered");
-        //         }
-        //         if (candidateVoters.Contains(vote.VoterAgent))
-        //         {
-        //             throw new Exception($"[Moderator agent] Voter {vote.VoterAgent.Name} already voted for {candidate.Name}");
-        //         }
-        //         candidateVoters.Add(vote.VoterAgent);
-        //     }
-        // }
+    private void SendWinnerToAll(CandidateAgent winner)
+    {
+        var messageContent = new MessageContent(MessageAction.Winner, winner);
+        Console.WriteLine($"[Moderator agent] And the winner is {winner.Name}!");
+        Broadcast(messageContent, includeSender: true);
     }
 }

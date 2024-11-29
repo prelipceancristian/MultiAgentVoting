@@ -3,8 +3,6 @@ using MultiAgentVoting.Models;
 
 namespace MultiAgentVoting.VotingProtocols;
 
-//NOTE: could pass just voter, as the voter agent in the current implementation has the ratings as a prop
-//NOTE: actually, could just pass the agents directly
 internal interface IVotingProtocol
 {
     public Vote Vote(VoterAgent voter, List<Rating> ratings);

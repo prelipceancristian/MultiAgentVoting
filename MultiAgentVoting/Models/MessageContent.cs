@@ -1,4 +1,4 @@
 ﻿namespace MultiAgentVoting.Models
 {
-    internal record MessageContent(MessageAction Action, object Payload);
+    internal record MessageContent(MessageAction Action, object? Payload);
 }

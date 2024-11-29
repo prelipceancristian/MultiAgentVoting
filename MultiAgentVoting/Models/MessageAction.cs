@@ -2,7 +2,7 @@
 {
     internal enum MessageAction
     {
-        Register,
+        Start,
         Vote,
         VoteResponse,
         Winner
