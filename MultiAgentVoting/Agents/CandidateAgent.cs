@@ -24,12 +24,16 @@ internal class CandidateAgent : Agent
         switch (messageContent.Action)
         {
             case MessageAction.Winner:
-                var winner = (CandidateAgent)messageContent.Payload;
+                var winner = (CandidateAgent)messageContent.Payload!;
                 HandleResults(winner);
                 break;
+
             case MessageAction.Start:
+
             case MessageAction.Vote:
+
             case MessageAction.VoteResponse:
+
             default:
                 throw new Exception("Unknown action");
         }

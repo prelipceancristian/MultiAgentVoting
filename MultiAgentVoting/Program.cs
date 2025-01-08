@@ -42,7 +42,7 @@ internal static class Program
         var environment = new EnvironmentMas();
         var candidateAgents = GenerateCandidates(candidateCount);
         var voterAgents = GenerateVoters(voterCount);
-        var moderatorAgent = new ModeratorAgent(Utils.ModeratorName);
+        var moderatorAgent = new ModeratorAgent("Moderator");
 
         foreach (var agent in candidateAgents)
         {

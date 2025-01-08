@@ -1,6 +1,6 @@
 ﻿namespace MultiAgentVoting.Models
 {
-    internal record Policy
+    internal class Policy
     {
         public IDictionary<string, double> CriteriaEvaluations { get; private init; } = new Dictionary<string, double>();
 
@@ -12,10 +12,11 @@
                 "Healthcare",
                 "Education", 
                 "Environment & Energy",
-                "Foreign affairs"
+                "Foreign Affairs"
             };
             var criteriaEvaluations = criteriaIds
                 .ToDictionary(criteriaId => criteriaId, _ => Utils.GenerateCriteriaEvaluation());
+
             return new Policy { CriteriaEvaluations = criteriaEvaluations };
         }
     }

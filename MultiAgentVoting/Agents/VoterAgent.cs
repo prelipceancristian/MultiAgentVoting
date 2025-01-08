@@ -28,11 +28,15 @@ internal class VoterAgent : Agent
             case MessageAction.Vote:
                 HandleVote();
                 break;
+
             case MessageAction.Winner:
                 Stop();
                 break;
+
             case MessageAction.VoteResponse:
+
             case MessageAction.Start:
+
             default:
                 throw new Exception("Message action unsupported");
         }
@@ -45,12 +49,12 @@ internal class VoterAgent : Agent
         var vote = votingProtocol.Vote(this, CandidatesRatings);
 
         var responseMessageContent = new MessageContent(MessageAction.VoteResponse, vote);
-        Send(Utils.ModeratorName, responseMessageContent);
+        Send("Moderator", responseMessageContent);
     }
 
     private List<Rating> RateCandidates()
     {
-        var candidates = SharedKnowledgeService.Registrations.Select(kvp => kvp.Key);
+        var candidates = SharedKnowledgeService.Candidates.Select(kvp => kvp.Key);
         var candidatesRatings = candidates
             .Select(RateCandidate)
             .OrderByDescending(rating => rating.Value)

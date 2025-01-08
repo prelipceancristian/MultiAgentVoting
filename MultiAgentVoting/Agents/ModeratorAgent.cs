@@ -7,7 +7,7 @@ namespace MultiAgentVoting.Agents;
 internal class ModeratorAgent : Agent
 {
     private Dictionary<CandidateAgent, List<VoterAgent>> _votes = new();
-    private Dictionary<VoterAgent, bool> _votersStatus = [];
+    private Dictionary<VoterAgent, bool> _votersStatus = new();
 
     public ModeratorAgent(string name)
     {
@@ -29,13 +29,17 @@ internal class ModeratorAgent : Agent
             case MessageAction.Start:
                 HandleStart();
                 break;
+
             case MessageAction.VoteResponse:
                 HandleVoteResponse(messageContent);
                 break;
+
             case MessageAction.Winner:
                 Stop();
                 break;
+
             case MessageAction.Vote:
+
             default:
                 throw new Exception("Could not parse message content");
         }
@@ -43,7 +47,7 @@ internal class ModeratorAgent : Agent
 
     private void HandleStart()
     {
-        _votes = SharedKnowledgeService.Registrations.ToDictionary(kvp => kvp.Key, _ => new List<VoterAgent>());
+        _votes = SharedKnowledgeService.Candidates.ToDictionary(kvp => kvp.Key, _ => new List<VoterAgent>());
         _votersStatus = SharedKnowledgeService.Voters.ToDictionary(kvp => kvp.Key, _ => false);
         var voterNames = _votersStatus.Select(kvp => kvp.Key.Name).ToList();
         SendVoteToVoters(voterNames);
