@@ -90,7 +90,7 @@ internal class ModeratorAgent : Agent
 
     private void DisplayElectionResults()
     {
-        Console.WriteLine("Results:");
+        Console.WriteLine("[Moderator] Results:");
         foreach (var kvp in _votes)
         {
             Console.WriteLine($"{kvp.Key.Name}: {kvp.Value.Count}");
@@ -99,7 +99,7 @@ internal class ModeratorAgent : Agent
 
     private void RestartElectionProcess(FailedElectionResult failedElectionResult)
     {
-        Console.WriteLine($"No candidate reached 50% of the votes. " +
+        Console.WriteLine($"[Moderator] No candidate reached 50% of the votes. " +
                           $"Removing candidate {failedElectionResult.RemovedCandidate.Name} and trying again.");
         SharedKnowledgeService.RemoveCandidate(failedElectionResult.RemovedCandidate);
         var votersToRetry = _votes[failedElectionResult.RemovedCandidate];
@@ -112,7 +112,7 @@ internal class ModeratorAgent : Agent
     private void SendWinnerToAll(CandidateAgent winner)
     {
         var messageContent = new MessageContent(MessageAction.Winner, winner);
-        Console.WriteLine($"[Moderator agent] And the winner is {winner.Name}!");
+        Console.WriteLine($"[Moderator] And the winner is {winner.Name}!");
         Broadcast(messageContent, includeSender: true);
     }
 }

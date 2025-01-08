@@ -15,11 +15,11 @@ internal class PluralityVotingProtocol : IVotingProtocol
         var candidate = vote.ViableCandidates[0];
         if (!votes.TryGetValue(candidate, out var candidateVoters))
         {
-            throw new Exception($"[Moderator agent] Voter {vote.VoterAgent.Name} failed to vote for {candidate.Name}. The candidate is not registered");
+            throw new Exception($"Voter {vote.VoterAgent.Name} failed to vote for {candidate.Name}. The candidate is not registered");
         }
         if (candidateVoters.Contains(vote.VoterAgent))
         {
-            throw new Exception($"[Moderator agent] Voter {vote.VoterAgent.Name} already voted for {candidate.Name}");
+            throw new Exception($"Voter {vote.VoterAgent.Name} already voted for {candidate.Name}");
         }
         candidateVoters.Add(vote.VoterAgent);
     }

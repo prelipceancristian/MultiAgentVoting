@@ -43,20 +43,21 @@ internal class CandidateAgent : Agent
     {
         if (winner == this)
         {
-            Console.WriteLine($"[Candidate {Name}] I won!");
+            Console.WriteLine($"[{Name}] I won!");
         }
         else
         {
             // There's a small chance that the candidate is a sore loser. 
             if (Utils.Rng.NextDouble() < 0.01)
             {
-                Console.WriteLine($"[Candidate {Name}] Rigged!");
+                Console.WriteLine($"[{Name}] Rigged!");
             }
             else
             {
-                Console.WriteLine($"[Candidate {Name}] I lost, congrats.");
+                Console.WriteLine($"[{Name}] I lost, congrats.");
             }
         }
+
         Stop();
     }
 }
