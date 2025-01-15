@@ -5,6 +5,8 @@ namespace MultiAgentVoting.VotingProtocols;
 
 internal class ApprovalVotingProtocol : IVotingProtocol
 {
+    public string Name => "Approval Voting Protocol";
+
     public Vote Vote(VoterAgent voter, List<Rating> ratings)
     {
         const double minimalApprovalRating = 0.5;

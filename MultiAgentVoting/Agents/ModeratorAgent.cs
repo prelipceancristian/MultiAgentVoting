@@ -8,6 +8,7 @@ internal class ModeratorAgent : Agent
 {
     private Dictionary<CandidateAgent, List<VoterAgent>> _votes = new();
     private Dictionary<VoterAgent, bool> _votersStatus = new();
+    public string Winner {  get; set; }
 
     public ModeratorAgent(string name)
     {
@@ -103,6 +104,15 @@ internal class ModeratorAgent : Agent
                           $"Removing candidate {failedElectionResult.RemovedCandidate.Name} and trying again.");
         SharedKnowledgeService.RemoveCandidate(failedElectionResult.RemovedCandidate);
         var votersToRetry = _votes[failedElectionResult.RemovedCandidate];
+        if( votersToRetry.Count == 0 )
+        {
+            // no one voted for this candidate, make all voters try again. 
+            votersToRetry = _votersStatus.Keys.ToList();
+            foreach (var voterKey in _votes.Keys)
+            {
+                _votes[voterKey] = [];
+            }
+        }
         _votersStatus = votersToRetry.ToDictionary(voter => voter, _ => false);
         _votes.Remove(failedElectionResult.RemovedCandidate);
         var voterNames = votersToRetry.Select(x => x.Name).ToList();
@@ -111,6 +121,7 @@ internal class ModeratorAgent : Agent
 
     private void SendWinnerToAll(CandidateAgent winner)
     {
+        Winner = winner.Name;
         var messageContent = new MessageContent(MessageAction.Winner, winner);
         Console.WriteLine($"[Moderator] And the winner is {winner.Name}!");
         Broadcast(messageContent, includeSender: true);

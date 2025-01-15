@@ -5,6 +5,8 @@ namespace MultiAgentVoting.VotingProtocols;
 
 internal class PluralityVotingProtocol : IVotingProtocol
 {
+    public string Name => "Plurality Voting Protocol";
+
     public void UpdateVotes(Dictionary<CandidateAgent, List<VoterAgent>> votes, Vote vote)
     {
         // assume votes already contains all available candidates

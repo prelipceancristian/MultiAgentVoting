@@ -6,11 +6,11 @@ namespace MultiAgentVoting
 {
     internal static class SharedKnowledgeService
     {
-        public static IDictionary<CandidateAgent, bool> Candidates { get; } = new ConcurrentDictionary<CandidateAgent, bool>();
+        public static IDictionary<CandidateAgent, bool> Candidates { get; set; } = new ConcurrentDictionary<CandidateAgent, bool>();
 
-        public static IDictionary<VoterAgent, bool> Voters { get; } = new ConcurrentDictionary<VoterAgent, bool>();
+        public static IDictionary<VoterAgent, bool> Voters { get; set; } = new ConcurrentDictionary<VoterAgent, bool>();
 
-        public static IVotingProtocol VotingProtocol { get; } = new ApprovalVotingProtocol();
+        public static IVotingProtocol VotingProtocol { get; set; } = new ApprovalVotingProtocol();
 
         public static void RegisterCandidate(CandidateAgent candidate)
         {

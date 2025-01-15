@@ -5,6 +5,8 @@ namespace MultiAgentVoting.VotingProtocols;
 
 internal class StvProtocol : IVotingProtocol
 {
+    public string Name => "STV Protocol";
+
     public Vote Vote(VoterAgent voter, List<Rating> ratings)
     {
         var bestRating = ratings.First().Value;

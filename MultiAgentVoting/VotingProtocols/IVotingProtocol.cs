@@ -5,6 +5,8 @@ namespace MultiAgentVoting.VotingProtocols;
 
 internal interface IVotingProtocol
 {
+    public string Name { get; }
+
     public Vote Vote(VoterAgent voter, List<Rating> ratings);
 
     public void UpdateVotes(Dictionary<CandidateAgent, List<VoterAgent>> votes, Vote vote);

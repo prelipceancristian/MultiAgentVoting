@@ -2,7 +2,7 @@
 {
     internal static class Utils
     {
-        public static readonly Random Rng = new(10);
+        public static Random Rng = new(10);
 
         public static T PickRandom<T>(List<T> list)
         {
