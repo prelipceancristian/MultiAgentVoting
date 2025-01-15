@@ -10,8 +10,8 @@ namespace MultiAgentVoting;
 
 internal static class Program
 {
-    const int candidateCount = 10;
-    const int voterCount = 10000;
+    private const int CandidateCount = 10;
+    private const int VoterCount = 10000;
 
     private static List<CandidateAgent> GenerateCandidates(int candidateCount)
     {
@@ -51,8 +51,8 @@ internal static class Program
 
         var environment = new EnvironmentMas();
 
-        var candidateAgents = GenerateCandidates(candidateCount);
-        var voterAgents = GenerateVoters(voterCount);
+        var candidateAgents = GenerateCandidates(CandidateCount);
+        var voterAgents = GenerateVoters(VoterCount);
         var moderatorAgent = new ModeratorAgent("Moderator");
 
         foreach (var agent in candidateAgents)
@@ -106,8 +106,8 @@ internal static class Program
 
         var exportExperiment = new ExportExperiment
         {
-            VoterCount = voterCount,
-            CandidateCount = candidateCount,
+            VoterCount = VoterCount,
+            CandidateCount = CandidateCount,
             ExportRuns = exportRunList
         };
 
